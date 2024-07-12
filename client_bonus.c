@@ -1,54 +1,91 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   client_bonus.c                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: achivela <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/07/12 12:00:30 by achivela          #+#    #+#             */
+/*   Updated: 2024/07/12 12:00:32 by achivela         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-#include "libft/libft.h"
-#include <signal.h>
+#include "minitalk.h"
 
-void	killing_func(int pid, unsigned char octet)
+int	g_result;
+
+void	send_bit(pid_t pid, char caracter)
 {
-	int				i;
-	unsigned char	octet_tmp;
+	int	bit;
 
-	octet_tmp = octet;
-	i = 8;
-	while (i-- > 0)
+	bit = 8;
+	while (bit--)
 	{
-		octet_tmp = octet >> i;
-		if (octet_tmp % 2 == 0)
-			kill(pid, SIGUSR2);
+		if (caracter & 0x80)
+			g_result = kill(pid, SIGUSR1);
 		else
-			kill(pid, SIGUSR1);
-		usleep(1500);
+			g_result = kill(pid, SIGUSR2);
+		caracter <<= 1;
+		usleep(500);
 	}
 }
 
-void	confirmation_handler(int sigsent)
+void	send_content(pid_t pid, char *content)
 {
-	if (sigsent == SIGUSR1)
-		ft_printf("1");
-	else if (sigsent == SIGUSR2)
-		ft_printf("0");
+	int	i;
+
+	i = 0;
+	while (content[i])
+	{
+		send_bit(pid, content[i]);
+		i++;
+	}
+	send_bit(pid, '\0');
+}
+
+void	mensage(int sinal, siginfo_t *info, void *uc)
+{
+	(void)uc;
+	(void)info;
+	if (sinal == SIGUSR1)
+	{
+		ft_printf("Enviada\n");
+		exit(0);
+	}
+}
+
+void	listen(void)
+{
+	struct sigaction	s_action;
+
+	s_action.sa_sigaction = &mensage;
+	s_action.sa_flags = SA_SIGINFO;
+	sigaction(SIGUSR1, &s_action, NULL);
+	sigaction(SIGUSR2, &s_action, NULL);
 }
 
 int	main(int argc, char **argv)
 {
-	int		client_id;
-	char	*str_to_send;
-	int		i;
+	pid_t	pid;
 
-	signal(SIGUSR1, confirmation_handler);
-	signal(SIGUSR2, confirmation_handler);
 	if (argc != 3)
+		ft_printf("ERRADO!\n");
+	else
 	{
-		ft_printf("Los parametros recibidos no son correctos\n");
-		return (0);
+		pid = ft_atoi(argv[1]);
+		if (pid == 0)
+		{
+			ft_printf("PID INVALIDO!\n");
+			exit(1);
+		}
+		ft_printf("\033[0;35mENVIANDO MENSAGEM AO SERVIDOR ...\n \033[0m");
+		listen();
+		send_content(pid, argv[2]);
+		while (1)
+		{
+			alert(g_result);
+			pause();
+		}
 	}
-	client_id = ft_atoi(argv[1]);
-	str_to_send = argv[2];
-	i = 0;
-	while (str_to_send[i])
-	{
-		killing_func(client_id, (unsigned char)str_to_send[i]);
-		i++;
-	}
-	ft_printf("\nSe han escrito %i caracteres\n", i);
 	return (0);
 }

@@ -1,44 +1,63 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   client.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: achivela <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/07/11 12:05:10 by achivela          #+#    #+#             */
+/*   Updated: 2024/07/11 12:05:12 by achivela         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+#include "minitalk.h"
 
-#include "libft/libft.h"
-#include <signal.h>
+int	g_result;
 
-void	killing_func(int pid, unsigned char octet)
+void	send_bit(pid_t pid, char caracter)
 {
-	int				i;
-	unsigned char	octet_tmp;
+	int	bit;
 
-	octet_tmp = octet;
-	i = 8;
-	while (i-- > 0)
+	bit = 8;
+	while (bit--)
 	{
-		octet_tmp = octet >> i;
-		if (octet_tmp % 2 == 0)
-			kill(pid, SIGUSR2);
+		if (caracter & 0x80)
+			g_result = kill(pid, SIGUSR1);
 		else
-			kill(pid, SIGUSR1);
-		usleep(100);
+			g_result = kill(pid, SIGUSR2);
+		caracter <<= 1;
+		usleep(500);
 	}
+}
+
+void	send_content(pid_t pid, char *content)
+{
+	int	i;
+
+	i = 0;
+	while (content[i])
+	{
+		send_bit(pid, content[i]);
+		i++;
+	}
+	send_bit(pid, '\0');
 }
 
 int	main(int argc, char **argv)
 {
-	int		client_id;
-	char	*str_to_send;
-	int		i;
+	pid_t	pid;
 
 	if (argc != 3)
+		ft_printf("ERRADO!\n");
+	else
 	{
-		ft_printf("Los parametros recibidos no son correctos\n");
-		return (0);
+		pid = ft_atoi(argv[1]);
+		if (pid == 0)
+		{
+			ft_printf("PID INVALIDO!\n");
+			exit(1);
+		}
+		send_content(pid, argv[2]);
+		alert(g_result);
 	}
-	client_id = ft_atoi(argv[1]);
-	str_to_send = argv[2];
-	i = 0;
-	while (str_to_send[i])
-	{
-		killing_func(client_id, (unsigned char)str_to_send[i]);
-		i++;
-	}
-	ft_printf("Se han escrito %i caracteres\n", i);
 	return (0);
 }

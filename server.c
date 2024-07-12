@@ -1,30 +1,57 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   server.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: achivela <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/07/11 13:45:00 by achivela          #+#    #+#             */
+/*   Updated: 2024/07/11 13:45:02 by achivela         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+#include "minitalk.h"
 
-#include "libft/libft.h"
-#include <signal.h>
-
-void	action(int sigsent)
+void	header(void)
 {
-	static unsigned char	buff;
-	static int				i;
+	printf("\033[0;42mSERVER ON\n");
+	printf("\033[0;33mPID : %d\n", getpid());
+}
 
-	buff |= (sigsent == SIGUSR1);
-	i++;
-	if (i == 8)
+void	listen(int signal, siginfo_t *info, void *uc)
+{
+	static unsigned char	caracter;
+	static int				bit;
+
+	(void)uc;
+	(void)info;
+	caracter |= (signal == SIGUSR1);
+	bit++;
+	if (bit == 8)
 	{
-		ft_printf("%c", buff);
-		i = 0;
-		buff = 0;
+		if (caracter == '\0')
+			write(1, "\n", 1);
+		else
+			write(1, &caracter, 1);
+		caracter = 0;
+		bit = 0;
 	}
 	else
-		buff <<= 1;
+		caracter <<= 1;
+}
+
+void	server(void)
+{
+	struct sigaction	s_sig;
+
+	s_sig.sa_sigaction = &listen;
+	sigaction(SIGUSR1, &s_sig, NULL);
+	sigaction(SIGUSR2, &s_sig, NULL);
 }
 
 int	main(void)
 {
-	ft_printf("El ID del cliente es: %i\n", getpid());
-	signal(SIGUSR2, action);
-	signal(SIGUSR1, action);
+	header();
 	while (1)
-		pause();
+		server();
 	return (0);
 }
