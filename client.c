@@ -51,11 +51,7 @@ int	main(int argc, char **argv)
 	else
 	{
 		pid = ft_atoi(argv[1]);
-		if (pid == 0)
-		{
-			ft_printf("PID INVALIDO!\n");
-			exit(1);
-		}
+		is_invalid(pid);
 		send_content(pid, argv[2]);
 		alert(g_result);
 	}

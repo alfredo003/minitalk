@@ -10,10 +10,11 @@
 /*                                                                            */
 /* ************************************************************************** */
 #ifndef MINITALK_H
-
 # define MINITALK_H
 # include "./libs/libft.h"
 # include <signal.h>
 
 void	alert(int res);
+void	header(void);
+void	is_invalid(int pid);
 #endif

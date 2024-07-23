@@ -12,12 +12,6 @@
 
 #include "minitalk.h"
 
-void	header(void)
-{
-	printf("\033[0;42mSERVER ON\n");
-	printf("\033[0;33mPID : %d\n", getpid());
-}
-
 void	listen(int signal, siginfo_t *info, void *uc)
 {
 	static unsigned char	caracter;
